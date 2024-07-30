@@ -4,7 +4,18 @@
 
 # Teslo API
 
-2.-  Levantar base de datos
+1.- Clonar Poryecto
+
+2.- Instalar paquetes necesarios
+```npm i```
+
+3.- Clonar el archivo ```.env.template``` y renombrarlo a ```.env```
+
+4.- Definir las variables de entorno de su ambiente
+
+5.-  Levantar base de datos
 ```
 docker-compose up -d
 ```
+
+6.- Levantar modo desarrollo en : ```npm run start:dev```
