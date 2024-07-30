@@ -1,0 +1,15 @@
+version: '3'
+
+services:
+  db:
+    image: postgres:14.3 #version de la imagen a trabajar
+    restart: always # si se cae que lo reinicie automatico
+    ports:
+      - "5432:5432" # puerto de origen y destino al cual conecta el postgres y mi pc
+    environment:
+      POSTGRES_PASSWORD: ${DB_PASSWORD} #variable entorno pwd
+      POSTGRES_USER: ${DB_USER} 
+      POSTGRES_DB: ${DB_NAME}
+    container_name: teslodb # nombre del container de docker
+    volumes:
+      - ./postgres:/var/lib/postgresql/data # monta en mi proyecto , en la carpeta postgres , la informacion de la base de datos, para no perder la informacion al reiniciar. Y lo monta en el directorio de postgres del contenedor
