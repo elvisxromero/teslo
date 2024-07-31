@@ -1,4 +1,4 @@
-import { Column, Entity, PrimaryGeneratedColumn } from "typeorm"; //
+import { BeforeInsert, Column, Entity, PrimaryGeneratedColumn } from "typeorm"; //
 
 @Entity() // Para que sea reconocida como entidad, se debe añadir el decorador entity e importarlo desde typeorm
 export class Product {
@@ -11,7 +11,7 @@ export class Product {
     })
     title: string;
 
-    @Column('numeric',{
+    @Column('float',{
         default:0
     })
     price: number;
@@ -42,4 +42,18 @@ export class Product {
         length: 255,
     })
     gender: string;
+
+
+    @BeforeInsert() // Antes de insertar ejecuto una funcion
+    checkSlugInsert(){
+
+        if(!this.slug){
+            this.slug =  this.title
+        }
+
+        this.slug = this.slug
+        .toLowerCase()
+        .replaceAll(' ','')
+        .replaceAll("'",'')
+    }
 }
