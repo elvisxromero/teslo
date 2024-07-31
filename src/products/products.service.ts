@@ -4,7 +4,8 @@ import { UpdateProductDto } from './dto/update-product.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Product } from './entities/product.entity';
 import { Repository } from 'typeorm';
-import { NotFoundError } from 'rxjs';
+import { PaginationDto } from 'src/common/dtos/pagination.dto';
+import { isUUID } from 'class-validator';
 
 @Injectable()
 export class ProductsService {
@@ -29,16 +30,33 @@ export class ProductsService {
     }
   }
 
-  // Aun falta paginar
-  findAll() {
-    return this.producRepository.find();
+  // 
+  findAll(paginationDto:PaginationDto) { // Añado el PaginationDTO para indicar que es de tipo paginationDTO
+
+    const { limit = 10 , offset = 0 } = paginationDto;
+    return this.producRepository.find({
+      take: limit,
+      skip: offset,
+      // Hacer relaciones
+    });
   }
 
-  async findOne(id: string) {
-    const product = await this.producRepository.findOneBy({id:id})
+  async findOne(termino_buscado: string) {
+
+    let product: Product;
+
+    if (isUUID(termino_buscado)){
+      product = await this.producRepository.findOneBy({id:termino_buscado})
+    }else{
+      const query= this.producRepository.createQueryBuilder();// Indico que en la entidad creare una query diseñada para busquedas con where u otro
+      product = await query.where('title=:title or slug=:slug',{ // Indico que necesitara 2 parametros
+        title:termino_buscado,// Defino los parametros que buscará el where
+        slug:termino_buscado
+      }).getOne();// get one es un limit 1 
+    }
 
     if(!product){
-      throw new NotFoundException(`El producto con el id ${id} no existe`)
+      throw new NotFoundException(`El producto con el termino "${termino_buscado}" no existe`)
     }
 
     return product;

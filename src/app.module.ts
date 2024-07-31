@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ProductsModule } from './products/products.module';
+import { CommonModule } from './common/common.module';
 
 @Module({
   imports: [ 
@@ -17,7 +18,7 @@ import { ProductsModule } from './products/products.module';
       autoLoadEntities: true, // Para que cargue automatico las entidades
       synchronize: true, // Hace que cualquier cambio que realice en mi archivo de configuracion de la base o sus tablas, la sincronice automaticamente en la BD, no se recomienda en prod ( en prod se hace migracion)
 
-    }), ProductsModule,// Creo configuracion para typeorm y su conexion
+    }), ProductsModule, CommonModule,// Creo configuracion para typeorm y su conexion
   ],
   controllers: [],
   providers: [],
