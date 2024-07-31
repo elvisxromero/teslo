@@ -1,4 +1,4 @@
-import { BeforeInsert, Column, Entity, PrimaryGeneratedColumn } from "typeorm"; //
+import { BeforeInsert, BeforeUpdate, Column, Entity, PrimaryGeneratedColumn } from "typeorm"; //
 
 @Entity() // Para que sea reconocida como entidad, se debe añadir el decorador entity e importarlo desde typeorm
 export class Product {
@@ -46,6 +46,19 @@ export class Product {
 
     @BeforeInsert() // Antes de insertar ejecuto una funcion
     checkSlugInsert(){
+
+        if(!this.slug){
+            this.slug =  this.title
+        }
+
+        this.slug = this.slug
+        .toLowerCase()
+        .replaceAll(' ','')
+        .replaceAll("'",'')
+    }
+
+    @BeforeUpdate() // Antes de insertar ejecuto una funcion
+    checkSlugUpdate(){
 
         if(!this.slug){
             this.slug =  this.title
