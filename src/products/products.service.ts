@@ -2,10 +2,10 @@ import { BadRequestException, Injectable, InternalServerErrorException, Logger, 
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Product } from './entities/product.entity';
 import { Repository } from 'typeorm';
 import { PaginationDto } from 'src/common/dtos/pagination.dto';
 import { isUUID } from 'class-validator';
+import { Product,ProductImage } from './entities';
 
 @Injectable()
 export class ProductsService {
@@ -15,15 +15,23 @@ export class ProductsService {
   constructor(
     @InjectRepository(Product) // Inyectamos nuestra entidad, se pueden inyectar varios repositorios
     private readonly producRepository: Repository<Product>, // sirve para insertar, querybuilder, transacciones, rollback, etc
+
+    @InjectRepository(ProductImage) // Inyectamos nuestra entidad, se pueden inyectar varios repositorios
+    private readonly producImageRepository: Repository<ProductImage>, // sirve para insertar, querybuilder, transacciones, rollback, etc
   ){} // Importar para trabajar con patron repositorio
 
   async create(createProductDto: CreateProductDto) {
     try {
 
-      const product = this.producRepository.create(createProductDto) // Creo instancia del producto a insertar a nivel de propiedades, aun no nserto en bdd
+      const { images = [] , ...productDetails } = createProductDto;
+
+      const product = this.producRepository.create({
+        ...productDetails,
+        images: images.map( image => this.producImageRepository.create({ url: image }))
+      }) // Creo instancia del producto a insertar a nivel de propiedades, aun no inserto en bdd
       await this.producRepository.save(product); //guardo en la base de datos
 
-      return product;
+      return { ...product, images }; //utilizo operador spread ... tres puntos y lo que hace es sobre escribir la imagen que ya trae, porla imagen que le envio
 
     } catch (error) {
       this.validacionErroresDB(error)
@@ -38,7 +46,28 @@ export class ProductsService {
       take: limit,
       skip: offset,
       // Hacer relaciones
+      relations: {
+        images: true
+      }
     });
+
+    /**
+     const products = await this.producRepository.find({
+      take: limit,
+      skip: offset,
+      // Hacer relaciones
+      relations: {
+        images: true
+      }
+
+      // retorno algo mas elaborado solo con  imagenes sin sus datos extras
+
+      return products.map( product => ({
+      ...product, // indico que estoy retornando algo de tipo product, 
+      images: product.images.map( img => img.url ) // Pero indico que la propiedad de images, retorne solo las url // recorrro imagenes
+
+      }))
+     * * */
   }
 
   async findOne(termino_buscado: string) {
@@ -65,7 +94,8 @@ export class ProductsService {
   async update(id: string, updateProductDto: UpdateProductDto) {
     const product = await this.producRepository.preload({ // Esto lo prepara para una actualizacion, busca por el id y actualiza segun datos y formato del updateProductDTO
       id:id,
-      ...updateProductDto
+      ...updateProductDto,
+      images: []
     })
 
     if(!product){

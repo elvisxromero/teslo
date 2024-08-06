@@ -1,4 +1,5 @@
-import { BeforeInsert, BeforeUpdate, Column, Entity, PrimaryGeneratedColumn } from "typeorm"; //
+import { BeforeInsert, BeforeUpdate, Column, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm"; //
+import { ProductImage } from "./product-image.entity";
 
 @Entity() // Para que sea reconocida como entidad, se debe añadir el decorador entity e importarlo desde typeorm
 export class Product {
@@ -42,6 +43,26 @@ export class Product {
         length: 255,
     })
     gender: string;
+
+
+    @Column({
+        type:'text',
+        array:true,
+        default:[]
+    })
+    tags: string[];
+
+    //Images asociada a la entidad productImage para compartir llave en la busqueda del producto
+    @OneToMany(
+        () => ProductImage, // Primer callback que indica a cual esta asociado el campo
+        (productImage) => productImage.product, // Segudno callback , que hace repeferencia al campo el cual enlaza la asociacion de la entidad
+        {
+            cascade: true,// Cascade true, indica que si se elimina el producto principal, borra en cascada sus asociaciones 
+            eager: true, // Indica que hace la relacion automatica para el find* -- https://orkhan.gitbook.io/typeorm/docs/eager-and-lazy-relations
+
+        } 
+    )
+    images?: ProductImage[]; // Tiene que ser del tipo referenciado
 
 
     @BeforeInsert() // Antes de insertar ejecuto una funcion

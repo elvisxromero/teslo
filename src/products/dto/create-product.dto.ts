@@ -31,4 +31,14 @@ export class CreateProductDto {
     @IsIn(['men','women','kid','unisex']) // Valido que lo que venga como string, debe estar considerados dentro de las opciones del arreglo
     gender: string;
 
+    @IsString({each:true})
+    @IsArray()
+    @IsOptional()
+    tags: string[];
+
+    @IsString({each:true})
+    @IsArray()
+    @IsOptional()
+    images?: string[];
+
 }
