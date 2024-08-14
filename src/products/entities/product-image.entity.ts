@@ -13,6 +13,7 @@ export class ProductImage {
     @ManyToOne(
         () => Product,
         (product) => product.images,
+        { onDelete : 'CASCADE' } // Indica que si elimino el producto, en cascada elimine las imagenes asociaadas
     )
     product: Product // Tiene que ser del tipo referenciado
 

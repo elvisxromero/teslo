@@ -2,10 +2,11 @@ import { BadRequestException, Injectable, InternalServerErrorException, Logger, 
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { PaginationDto } from 'src/common/dtos/pagination.dto';
 import { isUUID } from 'class-validator';
 import { Product,ProductImage } from './entities';
+import { query } from 'express';
 
 @Injectable()
 export class ProductsService {
@@ -18,6 +19,9 @@ export class ProductsService {
 
     @InjectRepository(ProductImage) // Inyectamos nuestra entidad, se pueden inyectar varios repositorios
     private readonly producImageRepository: Repository<ProductImage>, // sirve para insertar, querybuilder, transacciones, rollback, etc
+
+    private readonly dataSource: DataSource, // Para ejecutar query runner y trae la configuracion de la base de datos
+
   ){} // Importar para trabajar con patron repositorio
 
   async create(createProductDto: CreateProductDto) {
@@ -77,11 +81,14 @@ export class ProductsService {
     if (isUUID(termino_buscado)){
       product = await this.producRepository.findOneBy({id:termino_buscado})
     }else{
-      const query= this.producRepository.createQueryBuilder();// Indico que en la entidad creare una query diseñada para busquedas con where u otro
-      product = await query.where('title=:title or slug=:slug',{ // Indico que necesitara 2 parametros
-        title:termino_buscado,// Defino los parametros que buscará el where
-        slug:termino_buscado
-      }).getOne();// get one es un limit 1 
+      const query= this.producRepository.createQueryBuilder('prod');// Indico que en la entidad creare una query diseñada para busquedas con where u otro //  prod es un alias de la tabla producto en el querybuilder
+      product = await query
+        .where('title=:title or slug=:slug',{ // Indico que necesitara 2 parametros
+          title:termino_buscado,// Defino los parametros que buscará el where
+          slug:termino_buscado
+        })
+      .leftJoinAndSelect('prod.images','prodImages') // El cruce de los campos del left join
+      .getOne();// get one es un limit 1 
     }
 
     if(!product){
@@ -92,20 +99,48 @@ export class ProductsService {
   }
 
   async update(id: string, updateProductDto: UpdateProductDto) {
+
+    const { images, ...toUpdate } = updateProductDto;// Desestructuro el dto
+
     const product = await this.producRepository.preload({ // Esto lo prepara para una actualizacion, busca por el id y actualiza segun datos y formato del updateProductDTO
-      id:id,
-      ...updateProductDto,
-      images: []
-    })
+      id,...toUpdate}) // Actualizo con los datos del dto
 
     if(!product){
       throw new NotFoundException(`Producto con ID: ${id} no existe`)
     }
 
+    // Create Query Runner // TAe permite hacer un commit una vez que todo esté ok
+    const queryRunner = this.dataSource.createQueryRunner();
+
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
     try {
-      await this.producRepository.save( product);
-      return product;
+      if( images ){
+        await queryRunner.manager.delete( ProductImage, { product: { id:id } } ) // Elimina del productimage, los productos que tengan el id indicado
+
+        product.images = images.map( 
+          image => this.producImageRepository.create({ url: image }) // Agrego a image las nuevas url que voy a crear
+        )
+      } else {
+        //
+      }
+
+      await queryRunner.manager.save( product ); // Salvo el producto que voy a guardar
+
+      await queryRunner.commitTransaction();// Ejecuta el commit
+
+      await queryRunner.release(); // Libero la conexion
+
+
+      // await this.producRepository.save( product); Para hacerlo directo con el product repository
+
+
+      return this.findOne( id );
     } catch (error) {
+
+      await queryRunner.rollbackTransaction(); // En caso de error , hago un rollback
+      await queryRunner.release();
       this.validacionErroresDB(error)
     }
   }
@@ -125,4 +160,19 @@ export class ProductsService {
     this.logger.error(error)
     throw new InternalServerErrorException('Revisar error en log del servidor')
   }
+
+  async deleteAllProducts(){
+    const query = this.producRepository.createQueryBuilder('product');
+
+    try{
+      return await query // Me permite eliminar toda la tabla de producto para limpiar
+      .delete()
+      .where({})
+      .execute();
+    } catch( error ){
+      this.validacionErroresDB(error)
+    }
+  }
+
+
 }
