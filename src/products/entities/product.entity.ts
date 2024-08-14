@@ -1,7 +1,9 @@
 import { BeforeInsert, BeforeUpdate, Column, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm"; //
 import { ProductImage } from "./product-image.entity";
 
-@Entity() // Para que sea reconocida como entidad, se debe añadir el decorador entity e importarlo desde typeorm
+@Entity({
+    name: 'products' // Defino el nombre de la tabla 
+}) // Para que sea reconocida como entidad, se debe añadir el decorador entity e importarlo desde typeorm
 export class Product {
 
     @PrimaryGeneratedColumn('uuid')
