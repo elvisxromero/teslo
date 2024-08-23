@@ -5,6 +5,8 @@ import { ProductsModule } from './products/products.module';
 import { CommonModule } from './common/common.module';
 import { SeedModule } from './seed/seed.module';
 import { FilesModule } from './files/files.module';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 
 @Module({
   imports: [ 
@@ -20,7 +22,16 @@ import { FilesModule } from './files/files.module';
       autoLoadEntities: true, // Para que cargue automatico las entidades
       synchronize: true, // Hace que cualquier cambio que realice en mi archivo de configuracion de la base o sus tablas, la sincronice automaticamente en la BD, no se recomienda en prod ( en prod se hace migracion)
 
-    }), ProductsModule, CommonModule, SeedModule, FilesModule,// Creo configuracion para typeorm y su conexion
+    }), 
+
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname,'..','public'), // Indico que directorio voy a dejar de manera estatica para que se vea publico
+    }),
+
+    ProductsModule, 
+    CommonModule, 
+    SeedModule, 
+    FilesModule,// Creo configuracion para typeorm y su conexion
   ],
   controllers: [],
   providers: [],

@@ -1,9 +1,10 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { ValidationPipe } from '@nestjs/common';
+import { Logger, ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const logger = new Logger('Boostrap')
   app.setGlobalPrefix('api'); // Le agrego un prefijo a mi API
 
   app.useGlobalPipes( // Validacon para entradas de la API
@@ -13,6 +14,7 @@ async function bootstrap() {
     })
   );
 
-  await app.listen(3000);
+  await app.listen(process.env.PORT);
+  logger.log(`App corriendo en ${process.env.PORT}`)
 }
 bootstrap();
